@@ -65,9 +65,9 @@ class SoundEngine {
 const sfx = new SoundEngine();
 
 /* ═══════════════════════════════════════════════════
-   WEB-LINE CANVAS BACKGROUND
+   GLOBAL FIXED ANIMATED BACKGROUND — full page
 ════════════════════════════════════════════════════ */
-function WebLineBG() {
+function GlobalBG() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -75,69 +75,117 @@ function WebLineBG() {
     if (!canvas) return;
     const ctx = canvas.getContext("2d")!;
     let raf: number;
-    let t = 0;
+    let glowT = 0;
 
     const resize = () => {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
     };
     resize();
-    const ro = new ResizeObserver(resize);
-    ro.observe(canvas);
+    window.addEventListener("resize", resize);
 
     const isMobile = window.innerWidth < 600;
-    const count = isMobile ? 30 : 55;
+    // more particles & higher opacity so they're clearly visible
+    const count = isMobile ? 42 : 70;
+    const maxDist = isMobile ? 110 : 140;
 
     const pts = Array.from({ length: count }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      vx: (Math.random() - 0.5) * 0.28,
-      vy: (Math.random() - 0.5) * 0.28,
-      r: Math.random() * 1.4 + 0.4,
-      isRed: Math.random() > 0.55,
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      vx: (Math.random() - 0.5) * 0.35,
+      vy: (Math.random() - 0.5) * 0.35,
+      r: Math.random() * 1.8 + 0.6,
+      isRed: Math.random() > 0.5,
+      // gives a nice spread — some start off-screen sides
+      oy: Math.random() * window.innerHeight,
     }));
 
     const draw = () => {
-      t += 0.008;
+      glowT += 0.004;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // web lines
+      // ── pulsing ambient glow orbs (red top-left, blue bottom-right) ──
+      const redPulse  = 0.12 + 0.06 * Math.sin(glowT);
+      const bluePulse = 0.10 + 0.05 * Math.sin(glowT + 2.1);
+
+      const gRed = ctx.createRadialGradient(
+        canvas.width * 0.15, canvas.height * 0.22, 0,
+        canvas.width * 0.15, canvas.height * 0.22, canvas.width * 0.55
+      );
+      gRed.addColorStop(0, `rgba(230,57,70,${redPulse})`);
+      gRed.addColorStop(1, "transparent");
+      ctx.fillStyle = gRed;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const gBlue = ctx.createRadialGradient(
+        canvas.width * 0.85, canvas.height * 0.75, 0,
+        canvas.width * 0.85, canvas.height * 0.75, canvas.width * 0.55
+      );
+      gBlue.addColorStop(0, `rgba(59,130,246,${bluePulse})`);
+      gBlue.addColorStop(1, "transparent");
+      ctx.fillStyle = gBlue;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // third subtle midpoint glow
+      const gMid = ctx.createRadialGradient(
+        canvas.width * 0.5, canvas.height * 0.5, 0,
+        canvas.width * 0.5, canvas.height * 0.5, canvas.width * 0.38
+      );
+      gMid.addColorStop(0, `rgba(230,57,70,${0.04 + 0.03 * Math.sin(glowT + 1)})`);
+      gMid.addColorStop(1, "transparent");
+      ctx.fillStyle = gMid;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // ── web lines ──
       for (let i = 0; i < pts.length; i++) {
         for (let j = i + 1; j < pts.length; j++) {
           const dx = pts[i].x - pts[j].x;
           const dy = pts[i].y - pts[j].y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          const maxD = isMobile ? 90 : 110;
-          if (dist < maxD) {
-            const alpha = 0.07 * (1 - dist / maxD);
-            const color = pts[i].isRed && pts[j].isRed ? `rgba(230,57,70,${alpha})` : `rgba(59,130,246,${alpha * 0.8})`;
+          if (dist < maxDist) {
+            const alpha = 0.18 * (1 - dist / maxDist);
             ctx.beginPath();
             ctx.moveTo(pts[i].x, pts[i].y);
             ctx.lineTo(pts[j].x, pts[j].y);
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 0.6;
+            ctx.strokeStyle = pts[i].isRed
+              ? `rgba(230,57,70,${alpha})`
+              : `rgba(59,130,246,${alpha})`;
+            ctx.lineWidth = 0.75;
             ctx.stroke();
           }
         }
+
         // dot
+        const dotAlpha = pts[i].isRed ? 0.75 : 0.65;
         ctx.beginPath();
         ctx.arc(pts[i].x, pts[i].y, pts[i].r, 0, Math.PI * 2);
-        ctx.fillStyle = pts[i].isRed ? `rgba(230,57,70,0.55)` : `rgba(59,130,246,0.45)`;
+        ctx.fillStyle = pts[i].isRed
+          ? `rgba(230,57,70,${dotAlpha})`
+          : `rgba(59,130,246,${dotAlpha})`;
         ctx.fill();
 
+        // move
         pts[i].x += pts[i].vx;
         pts[i].y += pts[i].vy;
-        if (pts[i].x < 0 || pts[i].x > canvas.width) pts[i].vx *= -1;
-        if (pts[i].y < 0 || pts[i].y > canvas.height) pts[i].vy *= -1;
+
+        // wrap around edges instead of bouncing — feels more natural
+        if (pts[i].x < -10)  pts[i].x = canvas.width + 10;
+        if (pts[i].x > canvas.width  + 10) pts[i].x = -10;
+        if (pts[i].y < -10)  pts[i].y = canvas.height + 10;
+        if (pts[i].y > canvas.height + 10) pts[i].y = -10;
       }
 
       raf = requestAnimationFrame(draw);
     };
     draw();
-    return () => { cancelAnimationFrame(raf); ro.disconnect(); };
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", resize);
+    };
   }, []);
 
-  return <canvas ref={canvasRef} className="particle-bg" />;
+  return <canvas ref={canvasRef} className="global-bg-canvas" />;
 }
 
 /* ═══════════════════════════════════════════════════
@@ -386,6 +434,12 @@ function App() {
     <>
       {!loaded && <LoadingScreen onDone={() => setLoaded(true)} />}
 
+      {/* ── FIXED FULL-PAGE ANIMATED BACKGROUND ── */}
+      <GlobalBG />
+
+      {/* ── ALL SITE CONTENT ABOVE THE FIXED BG ── */}
+      <div className="site-content">
+
       {/* MUTE TOGGLE */}
       <button className="mute-btn" onClick={toggleMute} title={muted ? "Unmute sounds" : "Mute sounds"}>
         {muted ? "🔇" : "🔊"}
@@ -428,7 +482,6 @@ function App() {
 
       {/* ─── HERO ─── */}
       <section className="hero" id="home">
-        <WebLineBG />
         <div className="hero-bg">
           <div className="hero-grid" />
           <div className="hero-orb hero-orb-1" />
@@ -693,6 +746,8 @@ function App() {
           </div>
         </div>
       </footer>
+
+      </div>{/* end .site-content */}
     </>
   );
 }
