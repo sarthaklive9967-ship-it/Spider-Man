@@ -1,0 +1,147 @@
+Edit my existing website and transform it into a premium Spider-inspired cinematic website for Sound_APEX.
+
+IMPORTANT:
+- Do not make it childish
+- Do not copy official Spider-Man posters, logos, or exact assets
+- Make it original, premium, futuristic, and cinematic
+- Keep the site fully mobile responsive
+- Use only HTML, CSS, and JavaScript
+- Keep performance smooth on phone
+
+BRAND:
+- Brand name: Sound_APEX
+- Subtitle / role: Minecraft Discord Developer
+
+THEME:
+- Dark cinematic black background
+- Red + electric blue glow accents
+- Subtle web-inspired patterns
+- Premium tech/gamer/dev vibe
+- Smooth transitions and polished animations
+
+HOME / HERO:
+- Create a stronger premium hero section
+- Use a custom Spider-inspired animated background
+- Background can include subtle moving webs, particles, city-night glow, or tech lines
+- Add a cinematic feel with depth and motion
+- Keep text readable and premium
+
+Hero heading:
+Sound_APEX
+
+Hero subtitle:
+Minecraft Discord Developer
+
+Hero description:
+Building premium Minecraft servers, custom plugins, resource packs, Discord communities, and powerful bots with a cinematic, futuristic edge.
+
+Add 2 premium buttons:
+1. Explore Services
+2. Join Discord
+
+DISCORD LINK:
+https://discord.gg/BEEyA4TE4h
+
+LOADING SCREEN:
+Add a premium fullscreen loading screen before the site appears.
+Requirements:
+- Center text: Sound_APEX
+- Small subtitle below: Minecraft Discord Developer
+- Animated loading bar
+- Animated percentage counter
+- Soft glow around text
+- Premium cinematic fade-out transition
+- Background should have subtle moving particles/web lines
+- Original design only, not copied from any reference
+
+INTERACTIVE TOUCH / CLICK EFFECTS:
+Add custom touch and mouse interactions across the site:
+- wherever the user touches/clicks, create a subtle web ripple / pulse / energy burst
+- make it smooth and premium
+- not too large, not childish
+- should work on both mobile touch and desktop mouse
+- buttons should have glow feedback
+- cards should slightly lift or react on touch
+
+SOUNDS:
+Add subtle optional interaction sounds in a premium way.
+Rules:
+- do NOT play sound on every touch
+- sound should only play on important actions like:
+  - menu open
+  - button click
+  - loader complete
+- use a soft custom web-tech / click style sound
+- include a mute/unmute toggle so users can control sound
+- keep sound disabled until the user interacts if needed for browser compatibility
+
+BACKGROUND ANIMATION:
+Add a lightweight live background.
+Ideas:
+- subtle animated web lines
+- drifting particles
+- red/blue ambient glow
+- slow-moving futuristic background layers
+- optional slight parallax on scroll
+
+SECTIONS:
+Keep these sections and redesign them to match the new Spider-inspired premium theme:
+1. Home
+2. About
+3. Services
+4. Projects
+5. Community
+6. Contact
+
+ABOUT:
+Rewrite the content to match my work:
+- Minecraft servers
+- custom plugins
+- mods
+- resource packs
+- Discord servers
+- Discord bots
+
+SERVICES:
+Use premium service cards for:
+- Minecraft Server Setup
+- Custom Plugin Development
+- Mods & Resource Packs
+- Discord Server Design
+- Discord Bot Development
+- Branding & Optimization
+
+PROJECTS:
+Replace project content with showcase cards for:
+- Premium Minecraft SMP Server
+- Custom Minecraft Plugin System
+- Stylish Resource Pack
+- Full Discord Community Server
+- Moderation / Utility Discord Bot
+- Custom Creator Server Setup
+
+COMMUNITY:
+- Make this section feel premium, active, and chilling
+- Add Join Our Discord button linked to:
+  https://discord.gg/BEEyA4TE4h
+
+CONTACT:
+- Use this email:
+  sarthaklive9967@gmail.com
+- Remove location completely
+- Keep form simple and premium
+
+FOOTER:
+- Match the new Spider-inspired theme
+- Keep it clean and premium
+
+ANIMATIONS:
+- smooth scroll reveal
+- glowing hover effects
+- section transitions
+- animated gradient glow
+- touch-friendly animations
+- mobile-friendly performance
+
+FINAL GOAL:
+Make the website feel like a premium Spider-inspired digital studio for Minecraft and Discord development — cinematic, stylish, interactive, and memorable.

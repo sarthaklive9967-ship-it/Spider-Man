@@ -1,86 +1,220 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import "./index.css";
 
-/* ═══════════════════════════════
-   LOADING SCREEN
-═══════════════════════════════ */
-function LoadingScreen({ onDone }: { onDone: () => void }) {
-  const [pct, setPct] = useState(0);
-  const [fading, setFading] = useState(false);
+/* ═══════════════════════════════════════════════════
+   SOUND ENGINE — Web Audio API, no external files
+════════════════════════════════════════════════════ */
+class SoundEngine {
+  private ctx: AudioContext | null = null;
+  muted = true; // start muted, unmute after first interaction
+
+  private getCtx(): AudioContext {
+    if (!this.ctx) this.ctx = new AudioContext();
+    if (this.ctx.state === "suspended") this.ctx.resume();
+    return this.ctx;
+  }
+
+  click() {
+    if (this.muted) return;
+    const ctx = this.getCtx();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.setValueAtTime(1200, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.08);
+    g.gain.setValueAtTime(0.08, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+    o.start(); o.stop(ctx.currentTime + 0.12);
+  }
+
+  menuOpen() {
+    if (this.muted) return;
+    const ctx = this.getCtx();
+    [600, 800, 1000].forEach((freq, i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "sine";
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = freq;
+      const t = ctx.currentTime + i * 0.07;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.06, t + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+      o.start(t); o.stop(t + 0.2);
+    });
+  }
+
+  loaderDone() {
+    if (this.muted) return;
+    const ctx = this.getCtx();
+    [440, 550, 660, 880].forEach((freq, i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "sine";
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = freq;
+      const t = ctx.currentTime + i * 0.1;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.07, t + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+      o.start(t); o.stop(t + 0.45);
+    });
+  }
+}
+
+const sfx = new SoundEngine();
+
+/* ═══════════════════════════════════════════════════
+   WEB-LINE CANVAS BACKGROUND
+════════════════════════════════════════════════════ */
+function WebLineBG() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  /* Particle canvas on loader */
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d")!;
     let raf: number;
+    let t = 0;
+
     const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
     };
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas);
+
+    const isMobile = window.innerWidth < 600;
+    const count = isMobile ? 30 : 55;
+
+    const pts = Array.from({ length: count }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 0.28,
+      vy: (Math.random() - 0.5) * 0.28,
+      r: Math.random() * 1.4 + 0.4,
+      isRed: Math.random() > 0.55,
+    }));
+
+    const draw = () => {
+      t += 0.008;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // web lines
+      for (let i = 0; i < pts.length; i++) {
+        for (let j = i + 1; j < pts.length; j++) {
+          const dx = pts[i].x - pts[j].x;
+          const dy = pts[i].y - pts[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const maxD = isMobile ? 90 : 110;
+          if (dist < maxD) {
+            const alpha = 0.07 * (1 - dist / maxD);
+            const color = pts[i].isRed && pts[j].isRed ? `rgba(230,57,70,${alpha})` : `rgba(59,130,246,${alpha * 0.8})`;
+            ctx.beginPath();
+            ctx.moveTo(pts[i].x, pts[i].y);
+            ctx.lineTo(pts[j].x, pts[j].y);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 0.6;
+            ctx.stroke();
+          }
+        }
+        // dot
+        ctx.beginPath();
+        ctx.arc(pts[i].x, pts[i].y, pts[i].r, 0, Math.PI * 2);
+        ctx.fillStyle = pts[i].isRed ? `rgba(230,57,70,0.55)` : `rgba(59,130,246,0.45)`;
+        ctx.fill();
+
+        pts[i].x += pts[i].vx;
+        pts[i].y += pts[i].vy;
+        if (pts[i].x < 0 || pts[i].x > canvas.width) pts[i].vx *= -1;
+        if (pts[i].y < 0 || pts[i].y > canvas.height) pts[i].vy *= -1;
+      }
+
+      raf = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => { cancelAnimationFrame(raf); ro.disconnect(); };
+  }, []);
+
+  return <canvas ref={canvasRef} className="particle-bg" />;
+}
+
+/* ═══════════════════════════════════════════════════
+   LOADING SCREEN
+════════════════════════════════════════════════════ */
+function LoadingScreen({ onDone }: { onDone: () => void }) {
+  const [pct, setPct] = useState(0);
+  const [fading, setFading] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d")!;
+    let raf: number;
+    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
     resize();
     window.addEventListener("resize", resize);
 
-    const particles = Array.from({ length: 55 }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      r: Math.random() * 1.6 + 0.4,
-      dx: (Math.random() - 0.5) * 0.35,
-      dy: (Math.random() - 0.5) * 0.35,
-      alpha: Math.random() * 0.5 + 0.15,
-      color: Math.random() > 0.5 ? "139,92,246" : "59,130,246",
+    const pts = Array.from({ length: 50 }, () => ({
+      x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
+      r: Math.random() * 1.3 + 0.4,
+      isRed: Math.random() > 0.5,
     }));
 
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach((p) => {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${p.color},${p.alpha})`;
+      for (let i = 0; i < pts.length; i++) {
+        for (let j = i + 1; j < pts.length; j++) {
+          const d = Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y);
+          if (d < 100) {
+            ctx.beginPath(); ctx.moveTo(pts[i].x, pts[i].y); ctx.lineTo(pts[j].x, pts[j].y);
+            ctx.strokeStyle = pts[i].isRed ? `rgba(230,57,70,${0.08*(1-d/100)})` : `rgba(59,130,246,${0.07*(1-d/100)})`;
+            ctx.lineWidth = 0.5; ctx.stroke();
+          }
+        }
+        ctx.beginPath(); ctx.arc(pts[i].x, pts[i].y, pts[i].r, 0, Math.PI * 2);
+        ctx.fillStyle = pts[i].isRed ? "rgba(230,57,70,0.6)" : "rgba(59,130,246,0.5)";
         ctx.fill();
-        p.x += p.dx;
-        p.y += p.dy;
-        if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
-      });
+        pts[i].x += pts[i].vx; pts[i].y += pts[i].vy;
+        if (pts[i].x < 0 || pts[i].x > canvas.width) pts[i].vx *= -1;
+        if (pts[i].y < 0 || pts[i].y > canvas.height) pts[i].vy *= -1;
+      }
       raf = requestAnimationFrame(draw);
     };
     draw();
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", resize);
-    };
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };
   }, []);
 
-  /* Progress counter */
   useEffect(() => {
-    const steps = [
-      { target: 30, delay: 0, speed: 22 },
-      { target: 65, delay: 320, speed: 30 },
-      { target: 88, delay: 700, speed: 45 },
-      { target: 100, delay: 1100, speed: 28 },
+    let cur = 0;
+    const schedule = [
+      { target: 28, delay: 0, speed: 25 },
+      { target: 60, delay: 350, speed: 32 },
+      { target: 85, delay: 800, speed: 48 },
+      { target: 100, delay: 1200, speed: 30 },
     ];
-
-    let current = 0;
     const timers: ReturnType<typeof setTimeout>[] = [];
 
-    steps.forEach(({ target, delay, speed }) => {
+    schedule.forEach(({ target, delay, speed }) => {
       const t = setTimeout(() => {
-        const tick = setInterval(() => {
-          current += 1;
-          setPct(current);
-          if (current >= target) clearInterval(tick);
+        const iv = setInterval(() => {
+          cur += 1;
+          setPct(cur);
+          if (cur >= target) clearInterval(iv);
         }, speed);
-        timers.push(tick as unknown as ReturnType<typeof setTimeout>);
+        timers.push(iv as unknown as ReturnType<typeof setTimeout>);
       }, delay);
       timers.push(t);
     });
 
     const done = setTimeout(() => {
+      sfx.loaderDone();
       setFading(true);
-      setTimeout(onDone, 900);
-    }, 2200);
+      setTimeout(onDone, 960);
+    }, 2300);
     timers.push(done);
 
     return () => timers.forEach(clearTimeout);
@@ -91,6 +225,7 @@ function LoadingScreen({ onDone }: { onDone: () => void }) {
       <canvas ref={canvasRef} className="loader-canvas" />
       <div className="loader-orb loader-orb-1" />
       <div className="loader-orb loader-orb-2" />
+      <div className="loader-orb loader-orb-3" />
       <div className="loader-content">
         <div className="loader-logo-wrap">
           <h1 className="loader-logo">Sound_APEX</h1>
@@ -108,82 +243,49 @@ function LoadingScreen({ onDone }: { onDone: () => void }) {
   );
 }
 
-/* ═══════════════════════════════
-   PARTICLE BACKGROUND CANVAS
-═══════════════════════════════ */
-function ParticleBG() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d")!;
-    let raf: number;
-
-    const resize = () => {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-    };
-    resize();
-    const ro = new ResizeObserver(resize);
-    ro.observe(canvas);
-
-    const count = window.innerWidth < 600 ? 40 : 70;
-    const particles = Array.from({ length: count }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      r: Math.random() * 1.4 + 0.3,
-      dx: (Math.random() - 0.5) * 0.25,
-      dy: (Math.random() - 0.5) * 0.25,
-      alpha: Math.random() * 0.45 + 0.1,
-      color: Math.random() > 0.55 ? "139,92,246" : "59,130,246",
-    }));
-
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      // draw faint connection lines
-      particles.forEach((a, i) => {
-        particles.slice(i + 1).forEach((b) => {
-          const d = Math.hypot(a.x - b.x, a.y - b.y);
-          if (d < 100) {
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y);
-            ctx.lineTo(b.x, b.y);
-            ctx.strokeStyle = `rgba(139,92,246,${0.06 * (1 - d / 100)})`;
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
-          }
-        });
-        ctx.beginPath();
-        ctx.arc(a.x, a.y, a.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${a.color},${a.alpha})`;
-        ctx.fill();
-        a.x += a.dx;
-        a.y += a.dy;
-        if (a.x < 0 || a.x > canvas.width) a.dx *= -1;
-        if (a.y < 0 || a.y > canvas.height) a.dy *= -1;
-      });
-      raf = requestAnimationFrame(draw);
-    };
-    draw();
-    return () => { cancelAnimationFrame(raf); ro.disconnect(); };
-  }, []);
-
-  return <canvas ref={canvasRef} className="particle-bg" />;
-}
-
-/* ═══════════════════════════════
-   GLOBAL TOUCH / CLICK RIPPLE
-═══════════════════════════════ */
-function useGlobalTouchEffect() {
+/* ═══════════════════════════════════════════════════
+   GLOBAL WEB BURST EFFECT
+════════════════════════════════════════════════════ */
+function useWebBurst() {
   useEffect(() => {
     const spawn = (x: number, y: number) => {
-      const ring = document.createElement("div");
-      ring.className = "touch-ring";
-      ring.style.left = `${x}px`;
-      ring.style.top = `${y}px`;
-      document.body.appendChild(ring);
-      setTimeout(() => ring.remove(), 700);
+      const container = document.createElement("div");
+      container.className = "touch-burst";
+      container.style.left = `${x}px`;
+      container.style.top = `${y}px`;
+
+      const size = 60;
+      const lineCount = 8;
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("width", String(size));
+      svg.setAttribute("height", String(size));
+      svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
+
+      for (let i = 0; i < lineCount; i++) {
+        const angle = (i / lineCount) * Math.PI * 2;
+        const cx = size / 2, cy = size / 2;
+        const len = 22 + Math.random() * 8;
+        const x2 = cx + Math.cos(angle) * len;
+        const y2 = cy + Math.sin(angle) * len;
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", String(cx)); line.setAttribute("y1", String(cy));
+        line.setAttribute("x2", String(x2)); line.setAttribute("y2", String(y2));
+        line.setAttribute("stroke", i % 2 === 0 ? "rgba(230,57,70,0.75)" : "rgba(59,130,246,0.65)");
+        line.setAttribute("stroke-width", "1.2");
+        line.setAttribute("stroke-linecap", "round");
+        svg.appendChild(line);
+      }
+
+      // center dot
+      const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      circle.setAttribute("cx", String(size / 2)); circle.setAttribute("cy", String(size / 2));
+      circle.setAttribute("r", "3");
+      circle.setAttribute("fill", "rgba(230,57,70,0.8)");
+      svg.appendChild(circle);
+
+      container.appendChild(svg);
+      document.body.appendChild(container);
+      setTimeout(() => container.remove(), 700);
     };
 
     const onMouse = (e: MouseEvent) => spawn(e.clientX, e.clientY);
@@ -200,15 +302,23 @@ function useGlobalTouchEffect() {
   }, []);
 }
 
-/* ═══════════════════════════════
+/* ═══════════════════════════════════════════════════
    MAIN APP
-═══════════════════════════════ */
+════════════════════════════════════════════════════ */
 function App() {
   const [loaded, setLoaded] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [muted, setMuted] = useState(true);
 
-  useGlobalTouchEffect();
+  useWebBurst();
+
+  const toggleMute = () => {
+    const next = !muted;
+    setMuted(next);
+    sfx.muted = next;
+    if (!next) sfx.click();
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
@@ -218,27 +328,35 @@ function App() {
 
   useEffect(() => {
     if (!loaded) return;
-    const observer = new IntersectionObserver(
+    const obs = new IntersectionObserver(
       (entries) => entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add("revealed"); }),
       { threshold: 0.08, rootMargin: "0px 0px -40px 0px" }
     );
-    document.querySelectorAll(".reveal").forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
+    document.querySelectorAll(".reveal").forEach((el) => obs.observe(el));
+    return () => obs.disconnect();
   }, [loaded]);
 
   const scrollTo = (id: string) => {
     setMobileOpen(false);
-    setTimeout(() => { document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }); }, 50);
+    setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }), 50);
   };
 
+  const openMenu = () => {
+    setMobileOpen(true);
+    sfx.menuOpen();
+  };
+
+  const closeMenu = () => setMobileOpen(false);
+
   const addRipple = useCallback((e: React.MouseEvent<HTMLElement> | React.TouchEvent<HTMLElement>) => {
+    sfx.click();
     const btn = e.currentTarget;
     const circle = document.createElement("span");
     const rect = btn.getBoundingClientRect();
     const size = Math.max(rect.width, rect.height);
-    const clientX = "touches" in e ? e.touches[0]?.clientX ?? rect.left : (e as React.MouseEvent).clientX;
-    const clientY = "touches" in e ? e.touches[0]?.clientY ?? rect.top : (e as React.MouseEvent).clientY;
-    circle.style.cssText = `width:${size}px;height:${size}px;left:${clientX - rect.left - size / 2}px;top:${clientY - rect.top - size / 2}px;`;
+    const cx = "touches" in e ? (e.touches[0]?.clientX ?? rect.left) : (e as React.MouseEvent).clientX;
+    const cy = "touches" in e ? (e.touches[0]?.clientY ?? rect.top) : (e as React.MouseEvent).clientY;
+    circle.style.cssText = `width:${size}px;height:${size}px;left:${cx - rect.left - size / 2}px;top:${cy - rect.top - size / 2}px;`;
     circle.classList.add("ripple");
     btn.appendChild(circle);
     setTimeout(() => circle.remove(), 700);
@@ -246,6 +364,7 @@ function App() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    sfx.click();
     const btn = e.currentTarget.querySelector("button[type='submit']") as HTMLButtonElement;
     if (!btn) return;
     const orig = btn.textContent;
@@ -267,6 +386,11 @@ function App() {
     <>
       {!loaded && <LoadingScreen onDone={() => setLoaded(true)} />}
 
+      {/* MUTE TOGGLE */}
+      <button className="mute-btn" onClick={toggleMute} title={muted ? "Unmute sounds" : "Mute sounds"}>
+        {muted ? "🔇" : "🔊"}
+      </button>
+
       {/* ─── NAVBAR ─── */}
       <nav className={`navbar ${scrolled ? "scrolled" : ""}`}>
         <a href="#" className="nav-logo" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
@@ -284,7 +408,7 @@ function App() {
             </a>
           </li>
         </ul>
-        <div className="hamburger" onClick={() => setMobileOpen(!mobileOpen)}>
+        <div className="hamburger" onClick={mobileOpen ? closeMenu : openMenu}>
           <span style={{ transform: mobileOpen ? "rotate(45deg) translate(5px,5px)" : "" }} />
           <span style={{ opacity: mobileOpen ? 0 : 1 }} />
           <span style={{ transform: mobileOpen ? "rotate(-45deg) translate(5px,-5px)" : "" }} />
@@ -304,7 +428,7 @@ function App() {
 
       {/* ─── HERO ─── */}
       <section className="hero" id="home">
-        <ParticleBG />
+        <WebLineBG />
         <div className="hero-bg">
           <div className="hero-grid" />
           <div className="hero-orb hero-orb-1" />
@@ -314,17 +438,16 @@ function App() {
         <div className="hero-content">
           <div className="hero-badge reveal">
             <span className="hero-badge-dot" />
-            Premium Gaming & Community Brand
+            Minecraft · Discord · Developer
           </div>
-          <h1 className="hero-title reveal reveal-delay-1">
-            Building Premium <br />
-            <span className="gradient-text">Minecraft & Discord</span>
-            <br />Experiences
+          <p className="hero-subtitle-tag reveal reveal-delay-1">Premium Digital Studio</p>
+          <h1 className="hero-title reveal reveal-delay-2">
+            <span className="gradient-text">Sound_APEX</span>
           </h1>
-          <p className="hero-subtitle reveal reveal-delay-2">
-            Sound_APEX creates premium Minecraft servers, custom plugins, resource packs, Discord servers, and powerful bots for creators and communities that want a polished, professional, and unique setup.
+          <p className="hero-desc reveal reveal-delay-3">
+            Building premium Minecraft servers, custom plugins, resource packs, Discord communities, and powerful bots with a cinematic, futuristic edge.
           </p>
-          <div className="hero-buttons reveal reveal-delay-3">
+          <div className="hero-buttons reveal reveal-delay-4">
             <button className="btn-primary ripple-btn" onMouseDown={addRipple} onTouchStart={addRipple} onClick={() => scrollTo("services")}>
               Explore Services →
             </button>
@@ -347,15 +470,15 @@ function App() {
                 <div className="divider" />
               </div>
               <p className="reveal reveal-delay-1">
-                Sound_APEX is a premium gaming and community studio specializing in Minecraft server setups, custom plugin development, immersive resource packs, and fully configured Discord communities.
+                Sound_APEX is a premium digital studio specializing in Minecraft server architecture, custom plugin development, immersive resource packs, mods, and fully engineered Discord communities.
               </p>
               <p className="reveal reveal-delay-2">
-                Whether you need a high-performance SMP server, a feature-rich Discord bot, or a full-scale community brand — we build it with precision, style, and zero compromise on quality.
+                From high-performance SMP servers to powerful Discord bots — every project we deliver is built with precision, cinematic style, and zero compromise on quality.
               </p>
               <div className="reveal reveal-delay-3">
                 <button className="btn-primary ripple-btn" style={{ marginTop: "8px" }}
                   onMouseDown={addRipple} onTouchStart={addRipple} onClick={() => scrollTo("services")}>
-                  What We Do
+                  What We Build
                 </button>
               </div>
             </div>
@@ -388,12 +511,12 @@ function App() {
           </div>
           <div className="services-grid">
             {[
-              { icon: "⛏️", title: "Minecraft Server Setup", desc: "Full setup of optimized Minecraft servers — SMP, survival, minigames, or custom gamemodes. Performance-tuned, anti-cheat ready, and player-ready from day one." },
-              { icon: "🧩", title: "Custom Plugins", desc: "Bespoke Java plugins built from scratch to match your server's exact gameplay needs. Lightweight, efficient, and deeply integrated with your setup." },
-              { icon: "🎨", title: "Mods & Resource Packs", desc: "Stunning custom resource packs and mod configurations that give your server a unique visual identity your players will instantly recognize." },
-              { icon: "💬", title: "Discord Server Setup", desc: "Premium Discord communities built with structured channels, custom roles, verification flows, embeds, and a professional aesthetic your members will love." },
-              { icon: "🤖", title: "Discord Bot Development", desc: "Powerful custom bots — moderation, ticketing, leveling, economy, and more. Built with clean code and tailored entirely to your community's needs." },
-              { icon: "🚀", title: "Server Branding & Optimization", desc: "Complete branding packages — logos, banners, server icons, MOTD styling — plus performance optimization so your server runs smooth at scale." },
+              { icon: "⛏️", title: "Minecraft Server Setup", desc: "Fully optimized Minecraft servers — SMP, survival, minigames, or custom gamemodes. Performance-tuned, anti-cheat ready, and player-ready from day one." },
+              { icon: "🧩", title: "Custom Plugin Development", desc: "Bespoke Java plugins built from scratch — custom gameplay mechanics, admin tools, and integrations tailored precisely to your server's vision." },
+              { icon: "🎨", title: "Mods & Resource Packs", desc: "Cinematic resource packs and mod configurations that give your server a unique visual identity your players will instantly recognize and love." },
+              { icon: "💬", title: "Discord Server Design", desc: "Premium Discord communities with structured channels, custom roles, verification flows, branded embeds, and a professional aesthetic." },
+              { icon: "🤖", title: "Discord Bot Development", desc: "Powerful custom bots — moderation, ticketing, leveling, economy, and more. Built clean, reliable, and tailored to your community." },
+              { icon: "🚀", title: "Branding & Optimization", desc: "Full branding packages — logos, banners, server icons, MOTD styling — plus performance optimization so everything runs smooth at scale." },
             ].map((s, i) => (
               <div key={s.title} className={`service-card tappable reveal reveal-delay-${(i % 3) + 1}`}>
                 <div className="service-icon">{s.icon}</div>
@@ -412,17 +535,17 @@ function App() {
             <span className="section-label reveal">Portfolio</span>
             <h2 className="section-title reveal reveal-delay-1">Featured <span className="gradient-text">Showcase</span></h2>
             <p className="section-subtitle reveal reveal-delay-2" style={{ margin: "0 auto" }}>
-              A curated look at our most impressive Minecraft and Discord projects built for creators and communities.
+              A curated look at our most impressive Minecraft and Discord projects — built for creators and communities.
             </p>
           </div>
           <div className="projects-grid">
             {[
-              { emoji: "⛏️", bg: "linear-gradient(135deg,#1a0a2e,#0d1117)", tag: "Minecraft", title: "Premium Minecraft SMP Server", desc: "A fully configured survival multiplayer server with custom economy, land claiming, anti-cheat, and 50+ quality-of-life plugins — running 200+ concurrent players." },
-              { emoji: "🧩", bg: "linear-gradient(135deg,#0a1628,#0d1117)", tag: "Plugin", title: "Custom Plugin System", desc: "A modular plugin suite featuring custom crafting, player stats, seasonal events, and admin tools — written in Java and optimized for zero-lag performance." },
-              { emoji: "🎨", bg: "linear-gradient(135deg,#1a1a0a,#0d1117)", tag: "Resource Pack", title: "Stylish Resource Pack", desc: "A complete 32x resource pack overhaul with custom UI, unique block textures, and a cohesive visual theme that makes the server feel like a premium experience." },
-              { emoji: "💬", bg: "linear-gradient(135deg,#0a1a1a,#0d1117)", tag: "Discord", title: "Full Discord Community Server", desc: "A professionally designed Discord server with role systems, onboarding flows, reaction roles, structured channels, and a premium branded aesthetic." },
-              { emoji: "🤖", bg: "linear-gradient(135deg,#1a0a0a,#0d1117)", tag: "Bot", title: "Moderation & Utility Bot", desc: "A full-featured Discord bot with moderation commands, auto-moderation, ticket system, leveling, custom embeds, and slash command support." },
-              { emoji: "🚀", bg: "linear-gradient(135deg,#0a1428,#0d1117)", tag: "Branding", title: "Custom Creator Server Setup", desc: "End-to-end setup for a content creator — branded Minecraft server, matching Discord, custom bot, logo, banner, and launch-ready in under a week." },
+              { emoji: "⛏️", bg: "linear-gradient(135deg,#200a0a,#0d0a1a)", tag: "Minecraft", title: "Premium Minecraft SMP Server", desc: "Fully configured SMP with custom economy, land claiming, anti-cheat, and 50+ QoL plugins — running 200+ concurrent players with zero lag." },
+              { emoji: "🧩", bg: "linear-gradient(135deg,#0a1a30,#0d0a1a)", tag: "Plugin", title: "Custom Plugin System", desc: "A modular Java plugin suite — custom crafting, player stats, seasonal events, and admin tools optimized for performance and scalability." },
+              { emoji: "🎨", bg: "linear-gradient(135deg,#1a100a,#0d0a1a)", tag: "Resource Pack", title: "Stylish Resource Pack", desc: "A 32x premium resource pack overhaul — custom UI, unique textures, and a cohesive visual identity that makes the server feel cinematic." },
+              { emoji: "💬", bg: "linear-gradient(135deg,#0a1a20,#0d0a1a)", tag: "Discord", title: "Full Discord Community Server", desc: "Professionally designed Discord with role systems, onboarding flows, reaction roles, structured channels, and a premium branded aesthetic." },
+              { emoji: "🤖", bg: "linear-gradient(135deg,#200a10,#0d0a1a)", tag: "Bot", title: "Moderation & Utility Bot", desc: "Full-featured Discord bot — moderation, auto-mod, ticket system, leveling, custom embeds, and slash command support, built to last." },
+              { emoji: "🚀", bg: "linear-gradient(135deg,#0a102a,#0d0a1a)", tag: "Branding", title: "Custom Creator Server Setup", desc: "End-to-end setup for a content creator — branded Minecraft server, matching Discord, custom bot, logo, banner — launch-ready in days." },
             ].map((p, i) => (
               <div key={p.title} className={`project-card tappable reveal reveal-delay-${(i % 3) + 1}`}>
                 <div className="project-thumb" style={{ background: p.bg }}>
@@ -450,7 +573,7 @@ function App() {
             <div className="discord-icon">💬</div>
             <h2 className="section-title">Chill. Connect. Create.</h2>
             <p className="section-subtitle">
-              Join the Sound_APEX Discord — a premium space for Minecraft players, server owners, developers, and creators. Share your builds, get support, and vibe with a tight-knit community that takes quality seriously.
+              Join the Sound_APEX Discord — a premium space for Minecraft players, server owners, plugin developers, and creators. Share builds, get support, stay updated, and vibe with a tight-knit community that takes quality seriously.
             </p>
             <div className="discord-buttons">
               <a href="https://discord.gg/BEEyA4TE4h" target="_blank" rel="noopener noreferrer"
@@ -477,8 +600,8 @@ function App() {
               <span className="section-label reveal">Get In Touch</span>
               <h2 className="section-title reveal reveal-delay-1">Let's Build Something <span className="gradient-text">Extraordinary</span></h2>
               <div className="divider reveal reveal-delay-2" />
-              <p className="section-subtitle reveal reveal-delay-2" style={{ marginBottom: "40px" }}>
-                Have a project in mind? Want a premium Minecraft server, a custom Discord bot, or a full community setup? Reach out — we'll make it happen.
+              <p className="section-subtitle reveal reveal-delay-2" style={{ marginBottom: "38px" }}>
+                Have a project in mind? A premium Minecraft server, a custom Discord bot, or a full community setup? Reach out — we'll make it happen.
               </p>
               <div className="contact-info">
                 {[
@@ -506,20 +629,20 @@ function App() {
                 <input className="form-input" type="email" placeholder="john@example.com" required />
               </div>
               <div className="form-group">
-                <label className="form-label">Service Interested In</label>
+                <label className="form-label">Service</label>
                 <select className="form-input" style={{ cursor: "pointer" }} required defaultValue="">
                   <option value="" disabled>Select a service...</option>
                   <option>Minecraft Server Setup</option>
-                  <option>Custom Plugins</option>
+                  <option>Custom Plugin Development</option>
                   <option>Mods & Resource Packs</option>
-                  <option>Discord Server Setup</option>
+                  <option>Discord Server Design</option>
                   <option>Discord Bot Development</option>
-                  <option>Server Branding & Optimization</option>
+                  <option>Branding & Optimization</option>
                 </select>
               </div>
               <div className="form-group">
                 <label className="form-label">Message</label>
-                <textarea className="form-textarea" placeholder="Tell us about your project, vision, and goals..." required />
+                <textarea className="form-textarea" placeholder="Tell us about your project and vision..." required />
               </div>
               <button type="submit" className="btn-primary ripple-btn"
                 style={{ width: "100%", justifyContent: "center", border: "none", fontSize: "1rem" }}
@@ -541,7 +664,7 @@ function App() {
           <div>
             <p className="footer-col-title">Services</p>
             <ul className="footer-links">
-              {["Minecraft Server Setup", "Custom Plugins", "Resource Packs", "Discord Servers", "Discord Bots", "Server Branding"].map((l) => (
+              {["Minecraft Server Setup", "Custom Plugins", "Resource Packs", "Discord Servers", "Discord Bots", "Branding"].map((l) => (
                 <li key={l}><a href="#services" onClick={(e) => { e.preventDefault(); scrollTo("services"); }}>{l}</a></li>
               ))}
             </ul>
