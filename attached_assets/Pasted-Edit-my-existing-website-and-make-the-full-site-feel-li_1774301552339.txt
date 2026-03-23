@@ -1,0 +1,96 @@
+Edit my existing website and make the full site feel like a premium Spider-Man inspired cinematic theme.
+
+IMPORTANT:
+- Keep it premium, dark, stylish, and futuristic
+- Do not make it childish
+- Keep all content readable
+- Make sure the background image is still visible behind the site
+- Use only HTML, CSS, and JavaScript / current project structure
+- Keep everything mobile responsive
+
+THEME UPDATE:
+Change the whole visual theme to a better Spider-Man inspired style:
+- primary colors: deep black, dark red, crimson, subtle electric blue
+- add subtle web-style patterns and glow
+- improve typography and spacing
+- make cards, buttons, sections, and nav feel more Spider-themed
+- keep the background visible with transparent / semi-transparent overlays
+- do not use heavy solid backgrounds that hide the background image
+
+BACKGROUND VISIBILITY:
+- keep the spider background image visible in the hero and across the site
+- use soft dark transparent overlays only
+- sections should use glass / transparent dark backgrounds
+- improve contrast so text remains readable
+
+TOUCH / CLICK ANIMATION:
+Replace the current touch animation with a Spider web effect:
+- when the user taps or clicks anywhere, show a subtle animated web burst / web ripple
+- make it elegant and premium
+- not too large
+- works on both mobile touch and desktop mouse
+- button clicks should have a sharper mini web pulse
+- cards can slightly react on tap with glow and lift
+
+SOUND:
+- remove the current speaker / mute toggle button completely
+- remove the old sound
+- add a better Spider-inspired soft click / web-shoot / tech tap sound
+- sound should play when clicking buttons, menu, and important interactive elements
+- do not play sound continuously
+- sound should only start after the user’s first interaction for browser compatibility
+- no visible speaker button on screen
+
+LOADING SCREEN:
+Completely redesign the loading screen.
+Make it premium and Spider-inspired:
+- full screen loader
+- center text: Sound_APEX
+- subtitle: Minecraft Discord Developer
+- animated loading percentage
+- animated loading bar
+- subtle web lines / particles in background
+- red + blue cinematic glow
+- better typography
+- smoother fade-out transition
+- original design, more stylish than before
+
+HOME SECTION:
+Improve the hero section styling:
+- keep the spider background image
+- make the headline more powerful
+- make buttons more premium
+- add a subtle moving glow / cinematic atmosphere
+- keep text readable over the background
+
+BUTTON STYLE:
+- primary buttons should feel like premium Spider-tech buttons
+- dark red / crimson / blue glow
+- better hover and touch animation
+- slight inner glow and outer glow
+- smooth transition
+
+SECTIONS:
+Update every section to match the Spider-inspired theme:
+- About
+- Services
+- Projects
+- Community
+- Contact
+- Footer
+
+SERVICES / PROJECT CARDS:
+- use semi-transparent cards
+- subtle red outline or blue glow
+- better spacing
+- more cinematic hover / tap effects
+- cards should not hide the background too much
+
+MENU / NAV:
+- redesign the mobile menu to match the theme
+- better open/close animation
+- add subtle click sound to menu actions
+
+FINAL GOAL:
+Make the site feel like a premium Spider-inspired digital studio:
+cinematic, stylish, interactive, clean, readable, mobile-friendly, and visually impressive.

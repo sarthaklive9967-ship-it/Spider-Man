@@ -32,7 +32,9 @@ html { scroll-behavior: smooth; }
 
 body {
   font-family: 'Inter', sans-serif;
-  background: #000;
+  background:
+    linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.75)),
+    url("https://image2url.com/r2/default/images/1774300524887-d97e1192-1d3d-4630-b180-a0bbd9ca7cbc.jpg") center/cover no-repeat fixed;
   color: var(--text-primary);
   overflow-x: hidden;
   line-height: 1.6;
