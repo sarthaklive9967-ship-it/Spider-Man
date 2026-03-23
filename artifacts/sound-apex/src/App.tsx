@@ -1,15 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import "./index.css";
 
 function App() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const revealRefs = useRef<HTMLElement[]>([]);
 
   useEffect(() => {
-    const onScroll = () => {
-      setScrolled(window.scrollY > 60);
-    };
+    const onScroll = () => setScrolled(window.scrollY > 60);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -18,15 +15,12 @@ function App() {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("revealed");
-          }
+          if (entry.isIntersecting) entry.target.classList.add("revealed");
         });
       },
       { threshold: 0.08, rootMargin: "0px 0px -40px 0px" }
     );
-    const elements = document.querySelectorAll(".reveal");
-    elements.forEach((el) => observer.observe(el));
+    document.querySelectorAll(".reveal").forEach((el) => observer.observe(el));
     return () => observer.disconnect();
   }, []);
 
@@ -36,6 +30,25 @@ function App() {
       const el = document.getElementById(id);
       if (el) el.scrollIntoView({ behavior: "smooth" });
     }, 50);
+  };
+
+  const addRipple = (e: React.MouseEvent<HTMLElement> | React.TouchEvent<HTMLElement>) => {
+    const btn = e.currentTarget;
+    const circle = document.createElement("span");
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    let x: number, y: number;
+    if ("touches" in e) {
+      x = e.touches[0].clientX - rect.left - size / 2;
+      y = e.touches[0].clientY - rect.top - size / 2;
+    } else {
+      x = (e as React.MouseEvent).clientX - rect.left - size / 2;
+      y = (e as React.MouseEvent).clientY - rect.top - size / 2;
+    }
+    circle.style.cssText = `width:${size}px;height:${size}px;left:${x}px;top:${y}px;`;
+    circle.classList.add("ripple");
+    btn.appendChild(circle);
+    setTimeout(() => circle.remove(), 600);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -61,16 +74,28 @@ function App() {
           Sound_APEX
         </a>
         <ul className="nav-links">
-          {["about", "services", "projects", "community", "contact"].map((s) => (
-            <li key={s}>
-              <a href={`#${s}`} onClick={(e) => { e.preventDefault(); scrollTo(s); }}>
-                {s.charAt(0).toUpperCase() + s.slice(1)}
+          {[
+            { label: "Home", id: "home" },
+            { label: "About", id: "about" },
+            { label: "Services", id: "services" },
+            { label: "Projects", id: "projects" },
+            { label: "Community", id: "community" },
+            { label: "Contact", id: "contact" },
+          ].map((item) => (
+            <li key={item.id}>
+              <a href={`#${item.id}`} onClick={(e) => { e.preventDefault(); scrollTo(item.id); }}>
+                {item.label}
               </a>
             </li>
           ))}
           <li>
-            <a href="#contact" className="nav-cta" onClick={(e) => { e.preventDefault(); scrollTo("contact"); }}>
-              Get Started
+            <a
+              href="https://discord.gg/BEEyA4TE4h"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="nav-cta"
+            >
+              Join Discord
             </a>
           </li>
         </ul>
@@ -83,18 +108,32 @@ function App() {
 
       {/* ─── MOBILE MENU ─── */}
       <div className={`mobile-menu ${mobileOpen ? "open" : ""}`}>
-        {["about", "services", "projects", "community", "contact"].map((s) => (
-          <a key={s} href={`#${s}`} onClick={(e) => { e.preventDefault(); scrollTo(s); }}>
-            {s.charAt(0).toUpperCase() + s.slice(1)}
+        {[
+          { label: "Home", id: "home" },
+          { label: "About", id: "about" },
+          { label: "Services", id: "services" },
+          { label: "Projects", id: "projects" },
+          { label: "Community", id: "community" },
+          { label: "Contact", id: "contact" },
+        ].map((item) => (
+          <a key={item.id} href={`#${item.id}`} onClick={(e) => { e.preventDefault(); scrollTo(item.id); }}>
+            {item.label}
           </a>
         ))}
-        <a href="#contact" className="btn-primary" onClick={(e) => { e.preventDefault(); scrollTo("contact"); }}>
-          Get Started
+        <a
+          href="https://discord.gg/BEEyA4TE4h"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn-primary ripple-btn"
+          onMouseDown={addRipple}
+          onTouchStart={addRipple}
+        >
+          Join Discord
         </a>
       </div>
 
       {/* ─── HERO ─── */}
-      <section className="hero">
+      <section className="hero" id="home">
         <div className="hero-bg">
           <div className="hero-grid" />
           <div className="hero-orb hero-orb-1" />
@@ -104,21 +143,34 @@ function App() {
         <div className="hero-content">
           <div className="hero-badge reveal">
             <span className="hero-badge-dot" />
-            Premium Audio Production Agency
+            Premium Gaming & Community Brand
           </div>
           <h1 className="hero-title reveal reveal-delay-1">
-            Where Sound Meets <br />
-            <span className="gradient-text">Elite Excellence</span>
+            Building Premium <br />
+            <span className="gradient-text">Minecraft & Discord</span>
+            <br />Experiences
           </h1>
           <p className="hero-subtitle reveal reveal-delay-2">
-            Sound_APEX delivers world-class audio branding, music production, and sonic identity for artists, brands, and visionaries who refuse to settle for ordinary.
+            Sound_APEX creates premium Minecraft servers, custom plugins, resource packs, Discord servers, and powerful bots for creators and communities that want a polished, professional, and unique setup.
           </p>
           <div className="hero-buttons reveal reveal-delay-3">
-            <a href="#services" className="btn-primary" onClick={(e) => { e.preventDefault(); scrollTo("services"); }}>
+            <button
+              className="btn-primary ripple-btn"
+              onMouseDown={addRipple}
+              onTouchStart={addRipple}
+              onClick={() => scrollTo("services")}
+            >
               Explore Services →
-            </a>
-            <a href="#projects" className="btn-secondary" onClick={(e) => { e.preventDefault(); scrollTo("projects"); }}>
-              View Portfolio
+            </button>
+            <a
+              href="https://discord.gg/BEEyA4TE4h"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-secondary ripple-btn"
+              onMouseDown={addRipple}
+              onTouchStart={addRipple}
+            >
+              Join Discord
             </a>
           </div>
         </div>
@@ -131,27 +183,36 @@ function App() {
             <div className="about-text-block">
               <div className="reveal">
                 <span className="section-label">About Us</span>
-                <h2 className="section-title">Crafted for the <span style={{ background: "linear-gradient(135deg,#8b5cf6,#3b82f6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Exceptional</span></h2>
+                <h2 className="section-title">
+                  Crafted for the{" "}
+                  <span className="gradient-text">Elite</span>
+                </h2>
                 <div className="divider" />
               </div>
               <p className="reveal reveal-delay-1">
-                Sound_APEX is a premium audio production collective built for artists, brands, and creators who demand the highest caliber of sonic craftsmanship. We operate at the intersection of artistry and technology.
+                Sound_APEX is a premium gaming and community studio specializing in Minecraft server setups, custom plugin development, immersive resource packs, and fully configured Discord communities.
               </p>
               <p className="reveal reveal-delay-2">
-                From chart-topping music production to immersive brand sound identities, our team of elite producers, engineers, and audio architects deliver results that transcend the expected — and define the extraordinary.
+                Whether you need a high-performance SMP server, a feature-rich Discord bot, or a full-scale community brand — we build it with precision, style, and zero compromise on quality.
               </p>
               <div className="reveal reveal-delay-3">
-                <a href="#services" className="btn-primary" style={{ marginTop: "8px", display: "inline-flex" }} onClick={(e) => { e.preventDefault(); scrollTo("services"); }}>
+                <button
+                  className="btn-primary ripple-btn"
+                  style={{ marginTop: "8px" }}
+                  onMouseDown={addRipple}
+                  onTouchStart={addRipple}
+                  onClick={() => scrollTo("services")}
+                >
                   What We Do
-                </a>
+                </button>
               </div>
             </div>
             <div className="about-stats">
               {[
-                { n: "500+", l: "Projects Delivered" },
-                { n: "12+", l: "Years of Excellence" },
+                { n: "50+", l: "Servers Built" },
+                { n: "30+", l: "Bots Deployed" },
+                { n: "100+", l: "Plugins Written" },
                 { n: "98%", l: "Client Satisfaction" },
-                { n: "40+", l: "Global Clients" },
               ].map((s, i) => (
                 <div key={s.n} className={`stat-card reveal reveal-delay-${i + 1}`}>
                   <div className="stat-number">{s.n}</div>
@@ -168,21 +229,47 @@ function App() {
         <div className="container">
           <div style={{ textAlign: "center" }}>
             <span className="section-label reveal">What We Offer</span>
-            <h2 className="section-title reveal reveal-delay-1">Premium Audio <span style={{ background: "linear-gradient(135deg,#8b5cf6,#3b82f6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Services</span></h2>
+            <h2 className="section-title reveal reveal-delay-1">
+              Premium <span className="gradient-text">Services</span>
+            </h2>
             <p className="section-subtitle reveal reveal-delay-2" style={{ margin: "0 auto" }}>
-              Every service we offer is built on a foundation of technical mastery, creative vision, and an obsessive attention to detail.
+              Every project we take on is built with elite craftsmanship, clean code, and an uncompromising attention to detail.
             </p>
           </div>
           <div className="services-grid">
             {[
-              { icon: "🎵", title: "Music Production", desc: "Full-scale music production from concept to master — beats, arrangements, mixing, and mastering engineered for streaming platforms and live performance." },
-              { icon: "🎧", title: "Audio Branding", desc: "Craft a unique sonic identity for your brand. Logos, jingles, UI sounds, and complete audio guidelines that make your brand unmistakable." },
-              { icon: "🎙️", title: "Vocal Production", desc: "Elite vocal direction, editing, tuning, and processing. We elevate vocal performances to world-class standards for any genre." },
-              { icon: "🔊", title: "Mixing & Mastering", desc: "Industry-standard mixing and mastering that gives your tracks the depth, clarity, and loudness to compete on any platform, globally." },
-              { icon: "🎬", title: "Film & TV Scoring", desc: "Cinematic scores, soundtracks, and music supervision for film, TV, trailers, and digital content — from indie projects to studio productions." },
-              { icon: "🚀", title: "Artist Development", desc: "Strategic artist branding, sound direction, release strategy, and industry consulting to launch and grow your music career with precision." },
+              {
+                icon: "⛏️",
+                title: "Minecraft Server Setup",
+                desc: "Full setup of optimized Minecraft servers — SMP, survival, minigames, or custom gamemodes. Performance-tuned, anti-cheat ready, and player-ready from day one.",
+              },
+              {
+                icon: "🧩",
+                title: "Custom Plugins",
+                desc: "Bespoke Java plugins built from scratch to match your server's exact gameplay needs. Lightweight, efficient, and deeply integrated with your setup.",
+              },
+              {
+                icon: "🎨",
+                title: "Mods & Resource Packs",
+                desc: "Stunning custom resource packs and mod configurations that give your server a unique visual identity your players will instantly recognize.",
+              },
+              {
+                icon: "💬",
+                title: "Discord Server Setup",
+                desc: "Premium Discord communities built with structured channels, custom roles, verification flows, embeds, and a professional aesthetic your members will love.",
+              },
+              {
+                icon: "🤖",
+                title: "Discord Bot Development",
+                desc: "Powerful custom bots — moderation, ticketing, leveling, economy, and more. Built with clean code and tailored entirely to your community's needs.",
+              },
+              {
+                icon: "🚀",
+                title: "Server Branding & Optimization",
+                desc: "Complete branding packages — logos, banners, server icons, MOTD styling — plus performance optimization so your server runs smooth at scale.",
+              },
             ].map((s, i) => (
-              <div key={s.title} className={`service-card reveal reveal-delay-${(i % 3) + 1}`}>
+              <div key={s.title} className={`service-card tappable reveal reveal-delay-${(i % 3) + 1}`}>
                 <div className="service-icon">{s.icon}</div>
                 <h3 className="service-title">{s.title}</h3>
                 <p className="service-desc">{s.desc}</p>
@@ -197,57 +284,59 @@ function App() {
         <div className="container">
           <div style={{ textAlign: "center" }}>
             <span className="section-label reveal">Portfolio</span>
-            <h2 className="section-title reveal reveal-delay-1">Featured <span style={{ background: "linear-gradient(135deg,#8b5cf6,#3b82f6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Showcase</span></h2>
+            <h2 className="section-title reveal reveal-delay-1">
+              Featured <span className="gradient-text">Showcase</span>
+            </h2>
             <p className="section-subtitle reveal reveal-delay-2" style={{ margin: "0 auto" }}>
-              A curated selection of our most impactful projects across music, branding, and sonic innovation.
+              A curated look at our most impressive Minecraft and Discord projects built for creators and communities.
             </p>
           </div>
           <div className="projects-grid">
             {[
               {
-                emoji: "🌌",
+                emoji: "⛏️",
                 bg: "linear-gradient(135deg, #1a0a2e, #0d1117)",
-                tag: "Album",
-                title: "Nebula Chronicles",
-                desc: "Full production and mastering for a 12-track electronic concept album reaching #1 on independent charts across 8 countries.",
+                tag: "Minecraft",
+                title: "Premium Minecraft SMP Server",
+                desc: "A fully configured survival multiplayer server with custom economy, land claiming, anti-cheat, and 50+ quality-of-life plugins — running 200+ concurrent players.",
               },
               {
-                emoji: "⚡",
+                emoji: "🧩",
                 bg: "linear-gradient(135deg, #0a1628, #0d1117)",
-                tag: "Branding",
-                title: "VOLTEX Brand Sound",
-                desc: "Complete sonic identity for a premium energy brand — logo audio, UI sounds, ad campaign music, and brand guidelines.",
+                tag: "Plugin",
+                title: "Custom Plugin System",
+                desc: "A modular plugin suite featuring custom crafting, player stats, seasonal events, and admin tools — written in Java and optimized for zero-lag performance.",
               },
               {
-                emoji: "🎤",
+                emoji: "🎨",
                 bg: "linear-gradient(135deg, #1a1a0a, #0d1117)",
-                tag: "Artist",
-                title: "ARIA — Rise of a Star",
-                desc: "18-month artist development project transforming an emerging vocalist into a signed, touring artist with 2M+ monthly listeners.",
+                tag: "Resource Pack",
+                title: "Stylish Resource Pack",
+                desc: "A complete 32x resource pack overhaul with custom UI, unique block textures, and a cohesive visual theme that makes the server feel like a premium experience.",
               },
               {
-                emoji: "🎬",
+                emoji: "💬",
                 bg: "linear-gradient(135deg, #0a1a1a, #0d1117)",
-                tag: "Film Score",
-                title: "Horizon — Documentary",
-                desc: "Original score for an award-winning environmental documentary screened at Sundance, Cannes, and 40+ international festivals.",
+                tag: "Discord",
+                title: "Full Discord Community Server",
+                desc: "A professionally designed Discord server with role systems, onboarding flows, reaction roles, structured channels, and a premium branded aesthetic.",
               },
               {
-                emoji: "🏆",
+                emoji: "🤖",
                 bg: "linear-gradient(135deg, #1a0a0a, #0d1117)",
-                tag: "Campaign",
-                title: "APEX Sports Campaign",
-                desc: "High-energy audio production for a global sports brand's flagship product launch, reaching 200M+ impressions worldwide.",
+                tag: "Bot",
+                title: "Moderation & Utility Bot",
+                desc: "A full-featured Discord bot with moderation commands, auto-moderation, ticket system, leveling, custom embeds, and slash command support.",
               },
               {
-                emoji: "🌊",
+                emoji: "🚀",
                 bg: "linear-gradient(135deg, #0a1428, #0d1117)",
-                tag: "EP",
-                title: "Deep Blue Sessions",
-                desc: "5-track ambient EP produced, mixed, and mastered in collaboration with a Grammy-nominated artist — now featured in Netflix originals.",
+                tag: "Branding",
+                title: "Custom Creator Server Setup",
+                desc: "End-to-end setup for a content creator — branded Minecraft server, matching Discord, custom bot, logo, banner, and launch-ready in under a week.",
               },
             ].map((p, i) => (
-              <div key={p.title} className={`project-card reveal reveal-delay-${(i % 3) + 1}`}>
+              <div key={p.title} className={`project-card tappable reveal reveal-delay-${(i % 3) + 1}`}>
                 <div className="project-thumb" style={{ background: p.bg }}>
                   <div className="project-thumb-bg">{p.emoji}</div>
                   <div className="project-thumb-overlay" />
@@ -256,7 +345,12 @@ function App() {
                 <div className="project-body">
                   <h3 className="project-title">{p.title}</h3>
                   <p className="project-desc">{p.desc}</p>
-                  <a href="#contact" className="project-link" onClick={(e) => { e.preventDefault(); scrollTo("contact"); }}>
+                  <a
+                    href="https://discord.gg/BEEyA4TE4h"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="project-link"
+                  >
                     Learn More →
                   </a>
                 </div>
@@ -266,26 +360,38 @@ function App() {
         </div>
       </section>
 
-      {/* ─── DISCORD ─── */}
+      {/* ─── COMMUNITY / DISCORD ─── */}
       <section className="discord-section" id="community">
         <div className="container">
           <div className="discord-card reveal">
             <div className="discord-icon">💬</div>
-            <h2 className="section-title">Join the Sound_APEX Community</h2>
+            <h2 className="section-title">Chill. Connect. Create.</h2>
             <p className="section-subtitle">
-              Connect with elite producers, artists, and audio professionals. Get exclusive resources, feedback, industry insights, and first access to new services.
+              Join the Sound_APEX Discord — a premium space for Minecraft players, server owners, developers, and creators. Share your builds, get support, and vibe with a tight-knit community that takes quality seriously.
             </p>
             <div className="discord-buttons">
-              <a href="#" className="btn-primary" onClick={(e) => e.preventDefault()}>
+              <a
+                href="https://discord.gg/BEEyA4TE4h"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary ripple-btn"
+                onMouseDown={addRipple}
+                onTouchStart={addRipple}
+              >
                 Join Our Discord →
               </a>
-              <a href="#contact" className="btn-secondary" onClick={(e) => { e.preventDefault(); scrollTo("contact"); }}>
-                Learn More
-              </a>
+              <button
+                className="btn-secondary ripple-btn"
+                onMouseDown={addRipple}
+                onTouchStart={addRipple}
+                onClick={() => scrollTo("contact")}
+              >
+                Get in Touch
+              </button>
             </div>
             <div className="member-count">
               <span className="member-count-dot" />
-              <span>2,400+ members online right now</span>
+              <span>Members online — come hang 🎮</span>
             </div>
           </div>
         </div>
@@ -297,15 +403,18 @@ function App() {
           <div className="contact-grid">
             <div>
               <span className="section-label reveal">Get In Touch</span>
-              <h2 className="section-title reveal reveal-delay-1">Let's Create <span style={{ background: "linear-gradient(135deg,#8b5cf6,#3b82f6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Something Extraordinary</span></h2>
+              <h2 className="section-title reveal reveal-delay-1">
+                Let's Build Something{" "}
+                <span className="gradient-text">Extraordinary</span>
+              </h2>
               <div className="divider reveal reveal-delay-2" />
               <p className="section-subtitle reveal reveal-delay-2" style={{ marginBottom: "40px" }}>
-                Ready to elevate your sound? Reach out and let's discuss how Sound_APEX can transform your creative vision into an audio masterpiece.
+                Have a project in mind? Want a premium Minecraft server, a custom Discord bot, or a full community setup? Reach out — we'll make it happen.
               </p>
               <div className="contact-info">
                 {[
-                  { icon: "📧", label: "Email", value: "studio@soundapex.com" },
-                  { icon: "📍", label: "Location", value: "Los Angeles, CA — Remote Worldwide" },
+                  { icon: "📧", label: "Email", value: "sarthaklive9967@gmail.com" },
+                  { icon: "💬", label: "Discord", value: "discord.gg/BEEyA4TE4h" },
                   { icon: "🕐", label: "Response Time", value: "Within 24 hours on business days" },
                 ].map((c, i) => (
                   <div key={c.label} className={`contact-item reveal reveal-delay-${i + 2}`}>
@@ -331,19 +440,25 @@ function App() {
                 <label className="form-label">Service Interested In</label>
                 <select className="form-input" style={{ cursor: "pointer" }} required defaultValue="">
                   <option value="" disabled>Select a service...</option>
-                  <option>Music Production</option>
-                  <option>Audio Branding</option>
-                  <option>Vocal Production</option>
-                  <option>Mixing & Mastering</option>
-                  <option>Film & TV Scoring</option>
-                  <option>Artist Development</option>
+                  <option>Minecraft Server Setup</option>
+                  <option>Custom Plugins</option>
+                  <option>Mods & Resource Packs</option>
+                  <option>Discord Server Setup</option>
+                  <option>Discord Bot Development</option>
+                  <option>Server Branding & Optimization</option>
                 </select>
               </div>
               <div className="form-group">
                 <label className="form-label">Message</label>
                 <textarea className="form-textarea" placeholder="Tell us about your project, vision, and goals..." required />
               </div>
-              <button type="submit" className="btn-primary" style={{ width: "100%", justifyContent: "center", border: "none", fontSize: "1rem" }}>
+              <button
+                type="submit"
+                className="btn-primary ripple-btn"
+                style={{ width: "100%", justifyContent: "center", border: "none", fontSize: "1rem" }}
+                onMouseDown={addRipple}
+                onTouchStart={addRipple}
+              >
                 Send Message →
               </button>
             </form>
@@ -357,42 +472,52 @@ function App() {
           <div className="footer-brand">
             <div className="footer-logo">Sound_APEX</div>
             <p>
-              Premium audio production and sonic branding for artists and brands who demand excellence. Based in LA. Working globally.
+              Premium Minecraft and Discord setups for creators and communities who refuse to settle for ordinary.
             </p>
           </div>
           <div>
             <p className="footer-col-title">Services</p>
             <ul className="footer-links">
-              {["Music Production", "Audio Branding", "Vocal Production", "Mixing & Mastering", "Film Scoring"].map((l) => (
+              {["Minecraft Server Setup", "Custom Plugins", "Resource Packs", "Discord Servers", "Discord Bots", "Server Branding"].map((l) => (
                 <li key={l}><a href="#services" onClick={(e) => { e.preventDefault(); scrollTo("services"); }}>{l}</a></li>
               ))}
             </ul>
           </div>
           <div>
-            <p className="footer-col-title">Company</p>
+            <p className="footer-col-title">Navigate</p>
             <ul className="footer-links">
-              {["About", "Portfolio", "Community", "Contact"].map((l) => (
-                <li key={l}><a href={`#${l.toLowerCase()}`} onClick={(e) => { e.preventDefault(); scrollTo(l.toLowerCase()); }}>{l}</a></li>
+              {[
+                { label: "Home", id: "home" },
+                { label: "About", id: "about" },
+                { label: "Projects", id: "projects" },
+                { label: "Community", id: "community" },
+                { label: "Contact", id: "contact" },
+              ].map((l) => (
+                <li key={l.id}><a href={`#${l.id}`} onClick={(e) => { e.preventDefault(); scrollTo(l.id); }}>{l.label}</a></li>
               ))}
             </ul>
           </div>
           <div>
-            <p className="footer-col-title">Connect</p>
+            <p className="footer-col-title">Community</p>
             <ul className="footer-links">
-              {["Discord", "Instagram", "Twitter", "YouTube", "SoundCloud"].map((l) => (
-                <li key={l}><a href="#" onClick={(e) => e.preventDefault()}>{l}</a></li>
-              ))}
+              <li><a href="https://discord.gg/BEEyA4TE4h" target="_blank" rel="noopener noreferrer">Discord Server</a></li>
+              <li><a href="#contact" onClick={(e) => { e.preventDefault(); scrollTo("contact"); }}>Contact Us</a></li>
+              <li><a href="mailto:sarthaklive9967@gmail.com">Email Us</a></li>
             </ul>
           </div>
         </div>
         <div className="footer-bottom">
           <p>© 2026 Sound_APEX. All rights reserved.</p>
           <div className="social-links">
-            {["💬", "📷", "🐦", "▶️", "☁️"].map((icon, i) => (
-              <div key={i} className="social-link" onClick={() => {}}>
-                {icon}
-              </div>
-            ))}
+            <a
+              href="https://discord.gg/BEEyA4TE4h"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="social-link"
+              title="Discord"
+            >
+              💬
+            </a>
           </div>
         </div>
       </footer>

@@ -1,0 +1,97 @@
+Edit my existing website, do not rebuild from scratch.
+
+Brand name stays: Sound_APEX
+
+Change the whole website theme/content from “audio production agency” to a premium gaming/dev/community brand.
+
+Navbar / menu items:
+1. Home
+2. About
+3. Services
+4. Projects
+5. Community
+6. Contact
+
+Home section:
+- Keep the premium dark luxury style
+- Improve the hero section
+- Remove this old description:
+  “Sound_APEX delivers world-class audio branding, music production, and sonic identity for artists, brands, and visionaries who refuse to settle for ordinary.”
+- Replace it with a better description:
+  “Sound_APEX creates premium Minecraft servers, custom plugins, resource packs, Discord servers, and powerful bots for creators and communities that want a polished, professional, and unique setup.”
+- Add a small premium tag above the heading
+- Add 2 buttons:
+  1. Explore Services
+  2. Join Discord
+
+Hero heading:
+“Building Premium Minecraft & Discord Experiences”
+
+Add subtle hero animations:
+- glowing background movement
+- scroll reveal
+- button hover glow
+- touch ripple effect on buttons
+- card lift animation on tap/touch
+- smooth section reveal on swipe/scroll
+- mobile-friendly smooth animations using HTML, CSS, and JavaScript only
+
+About section:
+- Rewrite it so it matches my work:
+  Minecraft servers, mods, resource packs, server plugins, Discord servers, and Discord bots
+- Make it short, premium, and professional
+
+Services section:
+Replace all old services with these premium cards:
+1. Minecraft Server Setup
+2. Custom Plugins
+3. Mods & Resource Packs
+4. Discord Server Setup
+5. Discord Bot Development
+6. Server Branding & Optimization
+
+For each service:
+- add nice short description
+- add icon
+- add hover and touch animation
+
+Projects section:
+Remove old audio/music projects and replace with showcase cards based on what I make:
+1. Premium Minecraft SMP Server
+2. Custom Minecraft Plugin System
+3. Stylish Resource Pack
+4. Full Discord Community Server
+5. Moderation / Utility Discord Bot
+6. Custom Server Setup for Creators
+
+Make the projects section look better:
+- swipeable cards on mobile
+- each card should animate when touched
+- premium glow border on active card
+
+Community section:
+- Add my Discord server link:
+  https://discord.gg/BEEyA4TE4h
+- Button text: Join Our Discord
+- Make this section feel like a chilling premium community
+
+Contact section:
+- Use this email:
+  sarthaklive9967@gmail.com
+- Remove location completely
+- Remove any fake location text
+- Keep contact form simple and premium
+
+Footer:
+- Update links so they match the new sections
+- Keep premium design
+- remove anything unrelated to audio production
+
+Important:
+- keep it fully mobile responsive
+- keep premium black + purple/blue glow theme
+- improve spacing and readability on phone
+- use smooth scroll and reveal animations
+- add touch-friendly animations for mobile users
+- no heavy libraries
+- use only HTML, CSS, JavaScript
