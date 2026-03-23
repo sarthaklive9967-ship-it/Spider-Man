@@ -1,0 +1,56 @@
+Edit my existing website and add a premium custom loading screen for Sound_APEX.
+
+Do not copy the reference exactly. Make it original, more premium, and better.
+
+LOADING SCREEN REQUIREMENTS:
+- Show a fullscreen preloader before the website appears
+- Brand name in center: Sound_APEX
+- Small subtitle below it: Minecraft Discord Developer
+- Subtitle style should be premium, minimal, spaced-out letters, similar vibe to the reference but not the same
+- Add a glowing loading bar under the text
+- Add animated loading percentage number below the bar (0% to 100%)
+- Make the loading animation smooth and polished
+- Once loading completes, fade out the loader beautifully and reveal the website
+
+LOADER DESIGN:
+- Dark premium background
+- Black / deep navy / purple-blue glow theme
+- Elegant luxury style
+- Add subtle blur and glow around the title
+- Add soft particles or ambient moving light
+- Make it feel futuristic, gaming, developer, premium
+
+LIVE BACKGROUND:
+Add a subtle live animated background behind the loading screen and optionally the home section.
+You can choose the best version, but keep it lightweight and mobile-friendly.
+
+Preferred background ideas:
+- animated glowing grid
+- floating particles
+- developer / futuristic background
+- subtle Minecraft-inspired pixel particles
+- soft moving lights / gradient waves
+
+Do NOT make it too heavy or laggy on phone.
+
+TOUCH / MOUSE INTERACTION:
+Add an interactive animation wherever the user touches or clicks on the screen:
+- a glowing ripple / pulse effect
+- smooth small particle burst
+- follow-touch animation or expanding ring
+- should work on both touch and mouse
+- premium and subtle, not childish
+- use this effect across the site, especially on loading screen and hero area
+
+EXTRA ANIMATIONS:
+- buttons should have hover/touch glow
+- cards should slightly lift on touch
+- smooth reveal animations on scroll
+- premium transitions between sections
+
+IMPORTANT:
+- keep everything mobile responsive
+- keep it smooth on phone
+- use only HTML, CSS, and JavaScript
+- do not use heavy libraries
+- keep the website premium, futuristic, and polished
